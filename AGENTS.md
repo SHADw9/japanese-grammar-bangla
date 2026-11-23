@@ -28,7 +28,8 @@ To preview locally, serve or open `index.html` directly. There is no dev server,
 - **Never edit `www/` or `android/`** — both are generated and ignored by `.gitignore`. Edit root sources, then rebuild.
 - **Cache-busting is automatic.** Source `index.html` references bare `styles.css` / `app.js`; `build-www.mjs` rewrites them in `www/index.html` to `?v=<content hash>`. Don't hand-edit query strings or add `?v=` in the source.
 - **Theme init is split by design.** The inline `<script>` in `<head>` parses localStorage before first paint (avoiding flash) and exposes `window.__JP_THEME__`; `app.js` consumes that instead of re-parsing. Change defaults/validation in both places when touching theme state.
-- **CI requires repo secrets**: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Without the keystore secret it builds a debug APK instead. Runs on tags `v*` or manual dispatch.
+- **CI auto-releases on every push to `main`** (docs-only pushes skipped). It versions the build as `package.json` major.minor + `GITHUB_RUN_NUMBER`, then `softprops/action-gh-release` creates the tag and Release. **Do not add a `tags:` trigger** — the release action pushes a tag, which would re-trigger the workflow in a loop.
+- **CI requires repo secrets**: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (already set). Without the keystore secret it builds a debug APK instead.
 - `android-release.yml` calls `scripts/*.mjs` and `npm run build:www` from the repo root; keep helper scripts under `scripts/`.
 - **Changing `assets/icon.png` does not change the APK launcher icon.** Android mipmaps live in the generated `android/` project; regenerate them with `npx @capacitor/assets generate --android` after `cap add android`.
 
@@ -38,7 +39,7 @@ To preview locally, serve or open `index.html` directly. There is no dev server,
 - Bengali digits in UI come from the `bn()` helper in `app.js` — don't hardcode Latin digits.
 - `data-speak="…"` on any element makes it clickable for TTS; `app.js` auto-injects buttons for dialogue lines and `.ja-inline` sentences.
 - Persisted `localStorage` keys: `jp-theme`, `jp-furi`, `jp-read`, `jp-rate`, `jp-gemini`, `jp-hint`, `jp-update`. New state should follow the same `jp-*` JSON pattern.
-- **App version has one source at build time.** `build-www.mjs` stamps `<meta name="app-version">` in `www/index.html` from `APP_VERSION` (CI derives it from the tag) or `package.json`; `app.js` reads that meta for the GitHub release update check. The CI step order matters: version → `build:www` → `cap add` → `patch-android`.
+- **App version has one source at build time.** `build-www.mjs` stamps `<meta name="app-version">` in `www/index.html` from `APP_VERSION` (CI derives it from `package.json` + run number) or `package.json`; `app.js` reads that meta for the GitHub release update check. The CI step order matters: version → `build:www` → `cap add` → `patch-android`.
 - The update checker targets `SHADw9/japanese-grammar-bangla` (`UPDATE_REPO` in `app.js`); change it there if the repo moves.
 - Homework vocabulary hints (`.hw-hint`) are opt-in: `:root.no-hint` hides them, the class is set in the head boot script, and every `[data-hw-hint]` button toggles the same global state.
 - The AI Lab calls the Gemini API directly from the client with a user-supplied key stored in `localStorage`; there is no backend. Don't introduce secrets or a server dependency.

@@ -47,11 +47,16 @@ npx @capacitor/assets generate --android
 
 ## Releases
 
-`.github/workflows/android-release.yml` builds an APK on any `v*` tag (or manual dispatch) and attaches it to a GitHub Release.
+**Fully automatic.** Every push to `main` builds an APK, creates the tag, and publishes a GitHub Release with the APK attached — no manual tagging.
 
 ```sh
-git tag v1.0.1 && git push origin v1.0.1
+git add -A && git commit -m "…" && git push
 ```
+
+- Version = `package.json` major.minor + the CI run number, e.g. `1.0.7`. It always increases, which is what the in-app update check relies on. Bump `package.json` to `1.1.0` when you want a new minor series.
+- Docs-only pushes (`**.md`) are skipped.
+- You can also run it from the Actions tab (*Run workflow*).
+- Builds are serialised, so versions and releases stay in order.
 
 Signing uses the repo secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Without them the workflow produces an unsigned debug APK instead.
 
@@ -72,8 +77,8 @@ On launch (at most twice a day) and on demand via the footer button, the app cal
 version, and shows a banner linking to the newest non-debug APK. Dismissing hides that release only.
 
 The app's own version comes from `<meta name="app-version">`, which `build-www.mjs` stamps from
-`APP_VERSION` (CI sets it from the tag) or `package.json`. **Tag releases `vX.Y.Z` with increasing
-numbers** — the comparison is numeric, so a lower tag will never be offered as an update.
+`APP_VERSION` (CI derives it from `package.json` + the run number) or `package.json`. Versions always
+increase, so a stale build is never offered as an update.
 
 ## Layout
 
