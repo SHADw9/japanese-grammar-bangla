@@ -55,6 +55,16 @@ git tag v1.0.1 && git push origin v1.0.1
 
 Signing uses the repo secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Without them the workflow produces an unsigned debug APK instead.
 
+Generate the key **once** and keep it outside the repo (`*.jks` is gitignored):
+
+```sh
+keytool -genkeypair -keystore release.jks -storetype PKCS12 \
+  -alias japanese-bangla -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 release.jks    # paste into the ANDROID_KEYSTORE_BASE64 secret
+```
+
+> Back the keystore up. Android only accepts updates signed with the **same** key — lose it and existing users can never update, only uninstall and reinstall.
+
 ### In-app update check
 
 On launch (at most twice a day) and on demand via the footer button, the app calls
