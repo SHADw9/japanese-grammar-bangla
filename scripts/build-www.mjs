@@ -29,6 +29,14 @@ for (const f of ["styles.css", "app.js"]) {
   const ref = new RegExp('(href|src)="' + f.replace(/\./g, "\\.") + '(?:\\?v=[^"]*)?"', "g");
   html = html.replace(ref, (_, attr) => attr + '="' + f + "?v=" + hash + '"');
 }
+
+// Stamp the app version the update checker compares against GitHub Releases.
+const pkg = JSON.parse(readFileSync(at("package.json"), "utf8"));
+const version = process.env.APP_VERSION || pkg.version;
+html = html.replace(
+  /(<meta name="app-version" content=")[^"]*(")/,
+  "$1" + version + "$2"
+);
 writeFileSync(join(www, "index.html"), html);
 
-console.log("www/ ready");
+console.log("www/ ready · v" + version);

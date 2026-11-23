@@ -254,6 +254,48 @@ rt {
   background: var(--shu);
 }
 
+.update-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  width: min(1120px, calc(100% - 2 * clamp(20px, 5vw, 64px)));
+  margin: calc(var(--topbar-h) + 18px) auto 0;
+  padding: 12px 14px;
+  border: 1px solid var(--shu-solid);
+  background: var(--shu-wash);
+}
+.update-bar[hidden] { display: none; }
+/* the hero normally supplies the topbar offset; hand it over while the bar shows */
+:root.has-update .hero { padding-top: clamp(26px, 4vw, 44px); }
+.update-text {
+  margin: 0;
+  flex: 1 1 220px;
+  font-family: var(--f-display);
+  font-size: .85rem;
+  color: var(--ink);
+}
+.update-link {
+  padding: 7px 14px;
+  background: var(--shu-solid);
+  color: var(--on-shu);
+  font-family: var(--f-display);
+  font-size: .78rem;
+  text-decoration: none;
+}
+.update-link:hover { background: var(--shu-solid-hover); }
+.update-close {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.update-close:hover { border-color: var(--ink-soft); color: var(--ink); }
+
 .topbar {
   position: fixed;
   inset: 0 0 auto 0;
@@ -1931,7 +1973,7 @@ body.no-furi rt { display: none; }
     --code-bg: transparent;
     --code-border: #999;
   }
-  .topbar, .rail, .nav-scrim, .read-progress, .back-top, .chapter-foot, .hero-actions, .hero-mark, .site-foot, .theme-panel {
+  .topbar, .rail, .nav-scrim, .read-progress, .back-top, .chapter-foot, .hero-actions, .hero-mark, .site-foot, .theme-panel, .update-bar {
     display: none !important;
   }
   body { background: #fff; color: #111; font-size: 11pt; }

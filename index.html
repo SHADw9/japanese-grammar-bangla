@@ -6,6 +6,7 @@
 <title>জাপানি ব্যাকরণ — সম্পূর্ণ বাংলা গাইড</title>
 <meta name="description" content="শূন্য থেকে জাপানি ব্যাকরণ: ১০ অধ্যায়ে বাংলা ব্যাখ্যা, ফুরিগানা, রোমাজি, কথোপকথন, উত্তরসহ অনুশীলন ও ২৫০টি অনুবাদ হোমওয়ার্ক।">
 <meta name="theme-color" content="#e9ebe1">
+<meta name="app-version" content="1.0.0">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/logo-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -125,6 +126,11 @@
 
 <div class="shell">
   <main>
+    <div class="update-bar" id="updateBar" role="status" hidden>
+      <p class="update-text" id="updateText"></p>
+      <a class="update-link" id="updateLink" href="#" target="_blank" rel="noopener">ডাউনলোড</a>
+      <button class="update-close" type="button" id="updateClose" aria-label="বন্ধ করুন">×</button>
+    </div>
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-inner">
         <div class="hero-copy">
@@ -3649,6 +3655,10 @@
         <div class="foot-row">
           <a href="#top" class="text-link">উপরে ফিরুন</a>
           <span class="foot-mark">১০ অধ্যায় · ২৫০ হোমওয়ার্ক</span>
+        </div>
+        <div class="foot-row">
+          <button class="hw-btn" type="button" id="updateCheck">আপডেট আছে কিনা দেখুন</button>
+          <span class="foot-mark" id="appVersion"></span>
         </div>
       </div>
     </footer>

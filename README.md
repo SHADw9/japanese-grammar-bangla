@@ -13,6 +13,7 @@ No framework, no bundler, no build step for the web version: `index.html` + `sty
 - **Kana chart + quiz** (hiragana / katakana / mixed) with score and streak.
 - **Audio playback** of every example and dialogue line — native Android TTS in the app, Web Speech API in the browser, with adjustable speed.
 - **AI practice lab** — generate MCQs, translation drills and dialogues, or get your own sentence corrected. Uses your own Gemini API key (default model `gemini-3.5-flash-lite`), stored only on your device and sent straight to Google.
+- **App updates** — the app checks GitHub Releases for a newer version and shows a download banner; you can also check manually from the footer.
 - **4 colour schemes** (আই / সুমি / সাকুরা / মাতচা) × light / dark / auto.
 
 ## Run locally
@@ -53,6 +54,16 @@ git tag v1.0.1 && git push origin v1.0.1
 ```
 
 Signing uses the repo secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Without them the workflow produces an unsigned debug APK instead.
+
+### In-app update check
+
+On launch (at most twice a day) and on demand via the footer button, the app calls
+`api.github.com/repos/SHADw9/japanese-grammar-bangla/releases/latest`, compares the tag with its own
+version, and shows a banner linking to the newest non-debug APK. Dismissing hides that release only.
+
+The app's own version comes from `<meta name="app-version">`, which `build-www.mjs` stamps from
+`APP_VERSION` (CI sets it from the tag) or `package.json`. **Tag releases `vX.Y.Z` with increasing
+numbers** — the comparison is numeric, so a lower tag will never be offered as an update.
 
 ## Layout
 

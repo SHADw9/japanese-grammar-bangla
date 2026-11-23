@@ -37,6 +37,8 @@ To preview locally, serve or open `index.html` directly. There is no dev server,
 - All learner-facing prose, labels, and status messages are in Bengali. Japanese examples get `<ruby>漢字<rt>かな</rt></ruby>` furigana; inline Japanese uses `<span class="ja-inline" lang="ja">`, dialogue lines use `.line .ja` / `.romaji` / `.bn`.
 - Bengali digits in UI come from the `bn()` helper in `app.js` — don't hardcode Latin digits.
 - `data-speak="…"` on any element makes it clickable for TTS; `app.js` auto-injects buttons for dialogue lines and `.ja-inline` sentences.
-- Persisted `localStorage` keys: `jp-theme`, `jp-furi`, `jp-read`, `jp-rate`, `jp-gemini`, `jp-hint`. New state should follow the same `jp-*` JSON pattern.
+- Persisted `localStorage` keys: `jp-theme`, `jp-furi`, `jp-read`, `jp-rate`, `jp-gemini`, `jp-hint`, `jp-update`. New state should follow the same `jp-*` JSON pattern.
+- **App version has one source at build time.** `build-www.mjs` stamps `<meta name="app-version">` in `www/index.html` from `APP_VERSION` (CI derives it from the tag) or `package.json`; `app.js` reads that meta for the GitHub release update check. The CI step order matters: version → `build:www` → `cap add` → `patch-android`.
+- The update checker targets `SHADw9/japanese-grammar-bangla` (`UPDATE_REPO` in `app.js`); change it there if the repo moves.
 - Homework vocabulary hints (`.hw-hint`) are opt-in: `:root.no-hint` hides them, the class is set in the head boot script, and every `[data-hw-hint]` button toggles the same global state.
 - The AI Lab calls the Gemini API directly from the client with a user-supplied key stored in `localStorage`; there is no backend. Don't introduce secrets or a server dependency.

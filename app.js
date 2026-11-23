@@ -730,4 +730,108 @@
     var article = target.closest(".chapter");
     if (article) setActive(article.id);
   });
+
+  /* ---------- app update check (GitHub Releases) ---------- */
+
+  var UPDATE_REPO = "SHADw9/japanese-grammar-bangla";
+  var STORE_UPDATE = "jp-update";
+  var CHECK_EVERY = 12 * 60 * 60 * 1000; /* auto-check at most twice a day */
+
+  var versionMeta = document.querySelector('meta[name="app-version"]');
+  var APP_VERSION = versionMeta ? versionMeta.getAttribute("content") : "0.0.0";
+  var updateBar = document.getElementById("updateBar");
+  var updateText = document.getElementById("updateText");
+  var updateLink = document.getElementById("updateLink");
+  var updateClose = document.getElementById("updateClose");
+  var updateCheckBtn = document.getElementById("updateCheck");
+  var versionLabel = document.getElementById("appVersion");
+
+  if (versionLabel) versionLabel.textContent = "সংস্করণ " + bn(APP_VERSION);
+
+  function parts(v) {
+    return String(v).replace(/^v/, "").split(".").map(function (n) { return parseInt(n, 10) || 0; });
+  }
+  function isNewer(remote, local) {
+    var a = parts(remote), b = parts(local);
+    for (var i = 0; i < Math.max(a.length, b.length); i++) {
+      var x = a[i] || 0, y = b[i] || 0;
+      if (x !== y) return x > y;
+    }
+    return false;
+  }
+
+  function readUpdateState() {
+    try { return JSON.parse(localStorage.getItem(STORE_UPDATE) || "{}") || {}; } catch (e) { return {}; }
+  }
+  function writeUpdateState(patch) {
+    var s = readUpdateState();
+    for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) s[k] = patch[k];
+    try { localStorage.setItem(STORE_UPDATE, JSON.stringify(s)); } catch (e) {}
+  }
+
+  function showUpdate(tag, url) {
+    if (!updateBar) return;
+    var shown = bn(String(tag).replace(/^v/, ""));
+    updateBar.setAttribute("data-tag", tag);
+    updateText.textContent = "নতুন সংস্করণ " + shown + " পাওয়া গেছে (আপনারটি " + bn(APP_VERSION) + ")। আপডেট করতে নতুন APK নামিয়ে ইনস্টল করুন।";
+    updateLink.href = url;
+    updateBar.hidden = false;
+    root.classList.add("has-update");
+  }
+
+  function checkUpdate(manual) {
+    if (manual && updateCheckBtn) {
+      updateCheckBtn.disabled = true;
+      updateCheckBtn.textContent = "দেখা হচ্ছে…";
+    }
+    function done(msg) {
+      if (!manual || !updateCheckBtn) return;
+      updateCheckBtn.disabled = false;
+      updateCheckBtn.textContent = "আপডেট আছে কিনা দেখুন";
+      if (msg && versionLabel) versionLabel.textContent = msg;
+    }
+    fetch("https://api.github.com/repos/" + UPDATE_REPO + "/releases/latest", {
+      headers: { Accept: "application/vnd.github+json" }
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (rel) {
+        var tag = String(rel.tag_name || "");
+        writeUpdateState({ checkedAt: Date.now() });
+        if (!tag || !isNewer(tag, APP_VERSION)) {
+          done("সংস্করণ " + bn(APP_VERSION) + " · সর্বশেষ");
+          return;
+        }
+        var assets = rel.assets || [];
+        var apk = null;
+        for (var i = 0; i < assets.length; i++) {
+          var n = String(assets[i].name || "");
+          if (/\.apk$/i.test(n) && !/debug/i.test(n)) { apk = assets[i]; break; }
+          if (/\.apk$/i.test(n) && !apk) apk = assets[i];
+        }
+        var url = apk ? apk.browser_download_url : (rel.html_url || "https://github.com/" + UPDATE_REPO + "/releases/latest");
+        if (readUpdateState().dismissed !== tag) showUpdate(tag, url);
+        done("সংস্করণ " + bn(APP_VERSION) + " · নতুন " + bn(String(tag).replace(/^v/, "")));
+      })
+      .catch(function () {
+        done("সংস্করণ " + bn(APP_VERSION) + " · আপডেট দেখা যায়নি");
+      });
+  }
+
+  if (updateClose) {
+    updateClose.addEventListener("click", function () {
+      updateBar.hidden = true;
+      root.classList.remove("has-update");
+      /* don't nag again about this exact release; a newer one still shows */
+      writeUpdateState({ dismissed: updateBar.getAttribute("data-tag") || "" });
+    });
+  }
+  if (updateCheckBtn) {
+    updateCheckBtn.addEventListener("click", function () { checkUpdate(true); });
+  }
+
+  var lastCheck = readUpdateState().checkedAt || 0;
+  if (Date.now() - lastCheck > CHECK_EVERY) checkUpdate(false);
 })();
