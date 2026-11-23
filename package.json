@@ -4,7 +4,8 @@
   "private": true,
   "description": "জাপানি ব্যাকরণ বাংলায় — Android app (Capacitor)",
   "scripts": {
-    "build:www": "node scripts/build-www.mjs"
+    "build:www": "node scripts/build-www.mjs",
+    "icons:android": "node scripts/apply-android-icons.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",

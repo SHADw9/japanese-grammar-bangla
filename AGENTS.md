@@ -32,7 +32,7 @@ To preview locally, serve or open `index.html` directly. There is no dev server,
 - **CI requires repo secrets**: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (already set). Without the keystore secret it builds a debug APK instead.
 - **`ANDROID_KEY_PASSWORD` must equal `ANDROID_KEYSTORE_PASSWORD`.** The keystore is PKCS12, which protects the key with the store password; a distinct key password makes `apksigner` fail *after* a successful Gradle build.
 - `android-release.yml` calls `scripts/*.mjs` and `npm run build:www` from the repo root; keep helper scripts under `scripts/`.
-- **Changing `assets/icon.png` does not change the APK launcher icon.** Android mipmaps live in the generated `android/` project; regenerate them with `npx @capacitor/assets generate --android` after `cap add android`.
+- **Launcher icons come from `android-res/`, not `assets/icon.png`.** `cap add android` writes the stock Capacitor icon on every CI build, so `scripts/apply-android-icons.mjs` copies our pre-rendered PNGs in afterwards **and overwrites `mipmap-anydpi-v26/ic_launcher*.xml`** — Android 8+ uses the adaptive icon, so replacing only the PNGs changes nothing. Re-render the PNGs from `assets/logo.svg` / `assets/logo-mark.svg` with ImageMagick if the logo changes.
 
 ## Content conventions
 

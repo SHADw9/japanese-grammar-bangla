@@ -32,6 +32,7 @@ There is no dev server, test suite or lint config. Webfonts load from Google Fon
 npm install
 npm run build:www                 # copies sources into www/ and hash-stamps asset URLs
 npx cap add android               # first time only
+node scripts/apply-android-icons.mjs   # our launcher icon (stock Capacitor one otherwise)
 node scripts/patch-android.mjs    # TTS <queries> entry + versionName/versionCode
 npx cap sync android
 cd android && ./gradlew assembleDebug
@@ -39,11 +40,15 @@ cd android && ./gradlew assembleDebug
 
 `www/` and `android/` are generated — edit the root sources, never those folders.
 
-To regenerate launcher icons after changing `assets/icon.png`:
+### Launcher icon
 
-```sh
-npx @capacitor/assets generate --android
-```
+`assets/icon.png` is only the source artwork. The actual launcher icons are the pre-rendered PNGs in
+`android-res/`, copied into the Android project by `scripts/apply-android-icons.mjs` (CI runs it right
+after `cap add android`). It also replaces the adaptive-icon XML — without that, Android 8+ keeps
+showing the stock icon no matter which PNGs you swap.
+
+If the logo changes, re-render both sets from `assets/logo.svg` (full icon) and `assets/logo-mark.svg`
+(transparent foreground) at mdpi→xxxhdpi, then commit `android-res/`.
 
 ## Releases
 
