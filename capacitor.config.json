@@ -1,0 +1,6 @@
+{
+  "appId": "com.japanesebangla.grammar",
+  "appName": "জাপানি ব্যাকরণ",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}

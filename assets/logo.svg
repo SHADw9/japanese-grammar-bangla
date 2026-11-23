@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="জাপানি ব্যাকরণ লোগো">
+  <rect width="512" height="512" rx="112" fill="#e9ebe1"/>
+
+  <!-- enso: open ink ring -->
+  <path d="M430.8 192.4 A186 186 0 1 1 304.1 76.3"
+        fill="none" stroke="#2f3a56" stroke-width="30" stroke-linecap="round"/>
+
+  <!-- rising sun -->
+  <circle cx="256" cy="152" r="17" fill="#2f3a56"/>
+
+  <!-- torii gate -->
+  <g fill="#c0453b">
+    <path d="M158 216 Q256 190 354 216 L354 238 Q256 212 158 238 Z"/>
+    <rect x="176" y="264" width="160" height="17" rx="3"/>
+    <path d="M197 238 L215 238 L221 368 L191 368 Z"/>
+    <path d="M297 238 L315 238 L321 368 L291 368 Z"/>
+  </g>
+</svg>
