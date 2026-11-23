@@ -30,6 +30,7 @@ To preview locally, serve or open `index.html` directly. There is no dev server,
 - **Theme init is split by design.** The inline `<script>` in `<head>` parses localStorage before first paint (avoiding flash) and exposes `window.__JP_THEME__`; `app.js` consumes that instead of re-parsing. Change defaults/validation in both places when touching theme state.
 - **CI auto-releases on every push to `main`** (docs-only pushes skipped). It versions the build as `package.json` major.minor + `GITHUB_RUN_NUMBER`, then `softprops/action-gh-release` creates the tag and Release. **Do not add a `tags:` trigger** — the release action pushes a tag, which would re-trigger the workflow in a loop.
 - **CI requires repo secrets**: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (already set). Without the keystore secret it builds a debug APK instead.
+- **`ANDROID_KEY_PASSWORD` must equal `ANDROID_KEYSTORE_PASSWORD`.** The keystore is PKCS12, which protects the key with the store password; a distinct key password makes `apksigner` fail *after* a successful Gradle build.
 - `android-release.yml` calls `scripts/*.mjs` and `npm run build:www` from the repo root; keep helper scripts under `scripts/`.
 - **Changing `assets/icon.png` does not change the APK launcher icon.** Android mipmaps live in the generated `android/` project; regenerate them with `npx @capacitor/assets generate --android` after `cap add android`.
 

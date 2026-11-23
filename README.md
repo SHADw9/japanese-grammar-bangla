@@ -70,6 +70,8 @@ base64 -w0 release.jks    # paste into the ANDROID_KEYSTORE_BASE64 secret
 
 > Back the keystore up. Android only accepts updates signed with the **same** key — lose it and existing users can never update, only uninstall and reinstall.
 
+> Use the **same password for the store and the key**. PKCS12 encrypts the key with the store password, so a different `ANDROID_KEY_PASSWORD` makes `apksigner` fail with *"Failed to obtain key … Wrong password?"* even though the keystore itself opens fine.
+
 ### In-app update check
 
 On launch (at most twice a day) and on demand via the footer button, the app calls
