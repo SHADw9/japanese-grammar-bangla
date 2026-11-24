@@ -137,7 +137,8 @@
   var mqMobile = window.matchMedia("(max-width: 1099px)");
 
   function syncRail() {
-    var closed = mqMobile.matches && !document.body.classList.contains("nav-open");
+    var overlay = mqMobile.matches || document.documentElement.classList.contains("book-mode");
+    var closed = overlay && !document.body.classList.contains("nav-open");
     if ("inert" in rail) rail.inert = closed;
   }
 
@@ -730,6 +731,181 @@
     var article = target.closest(".chapter");
     if (article) setActive(article.id);
   });
+
+  /* ---------- book (page) reading mode ---------- */
+
+  var STORE_VIEW = "jp-view";
+  var book = document.getElementById("book");
+  var viewBtn = document.getElementById("viewBtn");
+  var bookHud = document.getElementById("bookHud");
+  var pageNow = document.getElementById("pageNow");
+  var pageTotal = document.getElementById("pageTotal");
+  var pagePrev = document.getElementById("pagePrev");
+  var pageNext = document.getElementById("pageNext");
+  var pages = book ? Array.prototype.slice.call(book.children).filter(function (el) {
+    return el.nodeType === 1 && /(^|\s)(hero|chapter|site-foot)(\s|$)/.test(el.className);
+  }) : [];
+  var pageIndex = 0;
+  var viewLabel = viewBtn ? viewBtn.querySelector(".view-label") : null;
+
+  function isBook() { return root.classList.contains("book-mode"); }
+
+  function pageFromHash() {
+    var id = window.location.hash.replace("#", "");
+    if (!id) return -1;
+    for (var i = 0; i < pages.length; i++) {
+      if (pages[i].id === id || pages[i].querySelector("#" + (window.CSS && CSS.escape ? CSS.escape(id) : id))) return i;
+    }
+    return -1;
+  }
+
+  function paintPageCount() {
+    if (!pageNow) return;
+    pageNow.textContent = bn(pageIndex + 1);
+    pageTotal.textContent = bn(pages.length);
+    if (pagePrev) pagePrev.disabled = pageIndex <= 0;
+    if (pageNext) pageNext.disabled = pageIndex >= pages.length - 1;
+  }
+
+  function animatePage(el, dir) {
+    if (!el || reduceMotion) return;
+    el.classList.remove("page-turn-next", "page-turn-prev");
+    void el.offsetWidth;
+    el.classList.add(dir > 0 ? "page-turn-next" : "page-turn-prev");
+    window.setTimeout(function () { el.classList.remove("page-turn-next", "page-turn-prev"); }, 460);
+  }
+
+  function syncPageHash(push) {
+    var id = pages[pageIndex] && pages[pageIndex].id;
+    var url = id ? "#" + id : window.location.pathname + window.location.search;
+    try {
+      if (push) history.pushState({ book: pageIndex }, "", url);
+      else history.replaceState({ book: pageIndex }, "", url);
+    } catch (e) {}
+  }
+
+  function scrollToPage(i, smooth) {
+    book.scrollTo({
+      left: i * (book.clientWidth || 1),
+      behavior: smooth && !reduceMotion ? "smooth" : "auto"
+    });
+  }
+
+  function setPage(i, animate, push) {
+    if (!book || !pages.length || !isBook()) return;
+    i = Math.max(0, Math.min(pages.length - 1, i));
+    var dir = i === pageIndex ? 0 : (i > pageIndex ? 1 : -1);
+    pageIndex = i;
+    scrollToPage(i, !!animate);
+    paintPageCount();
+    if (pages[i].id) setActive(pages[i].id);
+    if (animate && dir) animatePage(pages[i], dir);
+    if (push) syncPageHash(dir !== 0);
+  }
+
+  function setBookMode(on, save) {
+    root.classList.toggle("book-mode", on);
+    if (viewBtn) {
+      viewBtn.setAttribute("aria-pressed", String(on));
+      if (viewLabel) viewLabel.textContent = on ? "স্ক্রল" : "বই";
+      viewBtn.setAttribute("aria-label", on ? "স্ক্রল মোডে ফিরুন" : "বই পড়ার মোড");
+    }
+    if (bookHud) bookHud.hidden = !on;
+    syncRail();
+
+    if (!on) {
+      if (book) book.scrollLeft = 0;
+      var el = pages[pageIndex];
+      if (el) el.scrollIntoView({ block: "start", behavior: "auto" });
+    } else {
+      var fromHash = pageFromHash();
+      setPage(fromHash > -1 ? fromHash : pageIndex, false);
+      syncPageHash(false);
+    }
+    if (save) {
+      try { localStorage.setItem(STORE_VIEW, on ? "book" : "scroll"); } catch (e) {}
+    }
+  }
+
+  /* the carousel is a native snap scroller: swiping, flinging and snapping are
+     the browser's job, we only mirror the position into the page counter */
+  var scrollTick = false;
+  function syncFromScroll() {
+    scrollTick = false;
+    var w = book.clientWidth || 1;
+    var i = Math.max(0, Math.min(pages.length - 1, Math.round(book.scrollLeft / w)));
+    if (i === pageIndex) return;
+    pageIndex = i;
+    paintPageCount();
+    if (pages[i].id) setActive(pages[i].id);
+  }
+
+  if (book && pages.length) {
+    paintPageCount();
+
+    book.addEventListener("scroll", function () {
+      if (!scrollTick && isBook()) {
+        scrollTick = true;
+        window.requestAnimationFrame(syncFromScroll);
+      }
+    }, { passive: true });
+
+    if (viewBtn) {
+      viewBtn.addEventListener("click", function () { setBookMode(!isBook(), true); });
+    }
+    if (pagePrev) pagePrev.addEventListener("click", function () { setPage(pageIndex - 1, true, true); });
+    if (pageNext) pageNext.addEventListener("click", function () { setPage(pageIndex + 1, true, true); });
+
+    document.addEventListener("keydown", function (e) {
+      if (!isBook()) return;
+      var t = e.target;
+      if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+      if (e.key === "ArrowRight") { setPage(pageIndex + 1, true, true); e.preventDefault(); }
+      else if (e.key === "ArrowLeft") { setPage(pageIndex - 1, true, true); e.preventDefault(); }
+    });
+
+    /* in-page anchors flip to the right page instead of leaving the book */
+    document.addEventListener("click", function (e) {
+      if (!isBook()) return;
+      var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+      if (!a) return;
+      var id = a.getAttribute("href").slice(1);
+      var target = id ? document.getElementById(id) : null;
+      if (!target) return;
+      var idx = -1;
+      for (var i = 0; i < pages.length; i++) {
+        if (pages[i] === target || pages[i].contains(target)) { idx = i; break; }
+      }
+      if (idx < 0) return;
+      e.preventDefault();
+      setPage(idx, true, false);
+      try { history.pushState({ book: idx }, "", "#" + id); } catch (err) {}
+      window.setTimeout(function () {
+        target.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+      }, 60);
+    });
+
+    window.addEventListener("resize", function () {
+      if (isBook()) scrollToPage(pageIndex, false);
+    });
+
+    /* hardware / browser back turns the page instead of leaving the book */
+    window.addEventListener("popstate", function (e) {
+      if (!isBook()) return;
+      var st = e.state;
+      if (st && typeof st.book === "number") {
+        setPage(st.book, true);
+        return;
+      }
+      var idx = pageFromHash();
+      setPage(idx > -1 ? idx : 0, true);
+    });
+
+    if (root.classList.contains("book-mode")) setBookMode(true, false);
+    else if (bookHud) bookHud.hidden = true;
+  }
+
+
 
   /* ---------- app update check (GitHub Releases) ---------- */
 

@@ -13,6 +13,7 @@ No framework, no bundler, no build step for the web version: `index.html` + `sty
 - **Kana chart + quiz** (hiragana / katakana / mixed) with score and streak.
 - **Audio playback** of every example and dialogue line — native Android TTS in the app, Web Speech API in the browser, with adjustable speed.
 - **AI practice lab** — generate MCQs, translation drills and dialogues, or get your own sentence corrected. Uses your own Gemini API key (default model `gemini-3.5-flash-lite`), stored only on your device and sent straight to Google.
+- **Book (page) mode** — one tap on *বই* turns the course into a swipeable book: each section becomes a full-height page, horizontal swipes/arrows turn pages with a snap, the chapter list slides in over the page, and the hardware back button turns back a page. The choice is remembered (`jp-view`).
 - **App updates** — the app checks GitHub Releases for a newer version and shows a download banner; you can also check manually from the footer.
 - **4 colour schemes** (আই / সুমি / সাকুরা / মাতচা) × light / dark / auto.
 

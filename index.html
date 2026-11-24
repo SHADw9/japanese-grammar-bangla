@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>জাপানি ব্যাকরণ — সম্পূর্ণ বাংলা গাইড</title>
 <meta name="description" content="শূন্য থেকে জাপানি ব্যাকরণ: ১০ অধ্যায়ে বাংলা ব্যাখ্যা, ফুরিগানা, রোমাজি, কথোপকথন, উত্তরসহ অনুশীলন ও ২৫০টি অনুবাদ হোমওয়ার্ক।">
 <meta name="theme-color" content="#e9ebe1">
@@ -30,6 +30,10 @@
     // Homework vocabulary help is off until the learner turns it on.
     if (localStorage.getItem("jp-hint") !== "1") document.documentElement.classList.add("no-hint");
   } catch (e) { document.documentElement.classList.add("no-hint"); }
+  try {
+    // Book mode is opt-in; apply before first paint so the layout never flashes.
+    if (localStorage.getItem("jp-view") === "book") document.documentElement.classList.add("book-mode");
+  } catch (e) {}
 })();
 </script>
 </head>
@@ -53,6 +57,10 @@
     <span class="brand-name">জাপানি ব্যাকরণ <span class="brand-sub">বাংলায়</span></span>
   </div>
   <div class="topbar-controls">
+    <button class="view-btn" id="viewBtn" type="button" aria-pressed="false" aria-label="বই পড়ার মোড">
+      <span class="view-glyph" aria-hidden="true"></span>
+      <span class="view-label">বই</span>
+    </button>
     <button class="theme-btn" id="themeBtn" type="button" aria-expanded="false" aria-controls="themePanel" aria-label="থিম ও রঙের স্কিম">
       <span class="theme-glyph" aria-hidden="true"></span>
       <span class="theme-label">থিম</span>
@@ -125,12 +133,12 @@
 </nav>
 
 <div class="shell">
-  <main>
-    <div class="update-bar" id="updateBar" role="status" hidden>
-      <p class="update-text" id="updateText"></p>
-      <a class="update-link" id="updateLink" href="#" target="_blank" rel="noopener">ডাউনলোড</a>
-      <button class="update-close" type="button" id="updateClose" aria-label="বন্ধ করুন">×</button>
-    </div>
+  <div class="update-bar" id="updateBar" role="status" hidden>
+    <p class="update-text" id="updateText"></p>
+    <a class="update-link" id="updateLink" href="#" target="_blank" rel="noopener">ডাউনলোড</a>
+    <button class="update-close" type="button" id="updateClose" aria-label="বন্ধ করুন">×</button>
+  </div>
+  <main id="book">
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-inner">
         <div class="hero-copy">
@@ -3663,6 +3671,12 @@
       </div>
     </footer>
   </main>
+
+  <nav class="book-hud" id="bookHud" aria-label="পৃষ্ঠা নেভিগেশন" hidden>
+    <button class="book-arrow" id="pagePrev" type="button" aria-label="আগের পৃষ্ঠা">‹</button>
+    <p class="book-count"><span id="pageNow">১</span><span class="book-slash">/</span><span id="pageTotal">১৫</span></p>
+    <button class="book-arrow" id="pageNext" type="button" aria-label="পরের পৃষ্ঠা">›</button>
+  </nav>
 </div>
 
 <button class="back-top" id="backTop" type="button" aria-label="পেজের শুরুতে যান">↑</button>

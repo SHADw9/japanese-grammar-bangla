@@ -6,7 +6,10 @@
 /* ---------- palette tokens ---------- */
 
 :root {
-  --topbar-h: 62px;
+  --bar-h: 62px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  /* every offset in the app keys off this, so the notch is handled once */
+  --topbar-h: calc(var(--bar-h) + var(--safe-top));
   --rail-w: 278px;
 
   --f-display: "Anek Bangla", "Shippori Mincho", "Hind Siliguri", "Noto Sans Bengali", sans-serif;
@@ -300,12 +303,12 @@ rt {
   position: fixed;
   inset: 0 0 auto 0;
   height: var(--topbar-h);
+  padding: var(--safe-top) clamp(16px, 3vw, 28px) 0;
   z-index: 70;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 0 clamp(16px, 3vw, 28px);
   background: var(--topbar-bg);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--rule);
@@ -1522,9 +1525,14 @@ body.no-furi rt { display: none; }
 @media (max-width: 560px) {
   body { font-size: 16px; }
   .brand-sub { display: none; }
+  .topbar { gap: 8px; padding: 0 12px; }
+  .topbar-controls { gap: 4px; }
+  .brand-name { overflow: hidden; text-overflow: ellipsis; }
   .furi-switch { padding: 6px; gap: 7px; }
   .theme-btn { padding: 6px; }
   .theme-label { display: none; }
+  .view-btn { padding: 6px; }
+  .view-label { display: none; }
   .theme-panel { left: 12px; right: 12px; width: auto; }
   .menu-btn { padding: 8px 10px; }
   .menu-text { display: none; }
@@ -2180,3 +2188,273 @@ select.lab-select { min-height: 40px; padding: 6px 10px; }
 .lab-ja { font-family: var(--f-ja); font-size: 1.15rem; }
 .lab-text { white-space: pre-wrap; line-height: 1.9; padding: 14px 16px; border-left: 3px solid var(--indigo); background: var(--washi); }
 .lab-reveal summary { cursor: pointer; font-family: var(--f-display); color: var(--indigo); min-height: 32px; }
+
+/* ---------- reading view toggle ---------- */
+
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--f-display);
+  font-size: .82rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.view-btn:hover { color: var(--ink); }
+.view-btn[aria-pressed="true"] {
+  color: var(--ink);
+  border-color: var(--rule);
+  background: var(--paper-2);
+}
+.view-glyph {
+  position: relative;
+  flex: 0 0 auto;
+  width: 17px;
+  height: 14px;
+}
+.view-glyph::before,
+.view-glyph::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 7px;
+  height: 13px;
+  border: 1.5px solid currentColor;
+}
+.view-glyph::before { left: 0; border-right: 0; border-radius: 2px 0 0 2px; }
+.view-glyph::after { right: 0; border-left: 0; border-radius: 0 2px 2px 0; }
+
+/* ---------- book (page) reading mode ---------- */
+
+.book-hud {
+  position: fixed;
+  left: 50%;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 78;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-2) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, .55);
+}
+.book-hud[hidden] { display: none; }
+.book-arrow {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.book-arrow:hover { background: var(--paper-3); }
+.book-arrow:disabled { opacity: .3; cursor: default; }
+.book-count {
+  min-width: 68px;
+  margin: 0;
+  text-align: center;
+  font-family: var(--f-display);
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.book-slash { margin: 0 5px; color: var(--ink-faint); }
+
+:root.book-mode,
+:root.book-mode body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+:root.book-mode .shell { margin-left: 0; }
+
+:root.book-mode .back-top,
+:root.book-mode .read-progress,
+:root.book-mode .update-bar {
+  display: none !important;
+}
+
+/* the chapter list stays reachable as an overlay drawer, at every width */
+:root.book-mode .rail {
+  top: 0;
+  width: min(86vw, 330px);
+  padding-top: calc(var(--topbar-h) + 12px);
+  transform: translateX(-102%);
+  transition: transform .24s cubic-bezier(.3, .7, .2, 1);
+  box-shadow: 0 0 40px var(--shadow);
+}
+:root.book-mode body.nav-open .rail { transform: translateX(0); }
+:root.book-mode .menu-btn { display: inline-flex; }
+:root.book-mode body.nav-open .book-hud {
+  opacity: 0;
+  pointer-events: none;
+}
+
+:root.book-mode main {
+  position: relative;
+  display: flex;
+  height: calc(100vh - var(--topbar-h));
+  height: calc(100dvh - var(--topbar-h));
+  margin-top: var(--topbar-h);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  box-sizing: border-box;
+}
+:root.book-mode main::-webkit-scrollbar { width: 0; height: 0; }
+
+:root.book-mode main > .hero,
+:root.book-mode main > .chapter,
+:root.book-mode main > .site-foot {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  box-sizing: border-box;
+  padding-top: clamp(26px, 5vw, 50px);
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  padding-inline: max(clamp(20px, 5vw, 64px), calc((100% - 860px) / 2));
+  background-attachment: local, local;
+}
+
+/* the hero already has its own inner padding; let it own the top offset + centring */
+:root.book-mode main > .hero {
+  padding-inline: 0;
+  padding-top: clamp(26px, 4vw, 48px);
+}
+:root.book-mode .hero-inner { padding-inline: max(clamp(20px, 5vw, 64px), calc((100% - 1040px) / 2)); }
+/* book mode has no room for the tall display type; keep it proportional */
+:root.book-mode .hero-copy h1 { font-size: clamp(1.9rem, 5vw, 3rem); }
+:root.book-mode .hero { border-bottom: 0; }
+
+:root.book-mode .site-foot { display: flex; flex-direction: column; justify-content: center; }
+
+/* soft page gutter at both edges, independent of the scrolling page */
+:root.book-mode .shell::before,
+:root.book-mode .shell::after {
+  content: "";
+  position: fixed;
+  top: var(--topbar-h);
+  bottom: 0;
+  width: min(3.5vw, 30px);
+  z-index: 64;
+  pointer-events: none;
+  background: linear-gradient(to right, rgba(0, 0, 0, .09), rgba(0, 0, 0, 0));
+  opacity: .55;
+}
+:root.book-mode .shell::before { left: 0; }
+:root.book-mode .shell::after {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+/* page-turn feel: applied to the page that just arrived */
+@keyframes page-turn-next {
+  from { transform: perspective(2200px) rotateY(7deg) translateX(14px); opacity: .55; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes page-turn-prev {
+  from { transform: perspective(2200px) rotateY(-7deg) translateX(-14px); opacity: .55; }
+  to { transform: none; opacity: 1; }
+}
+:root.book-mode .page-turn-next { animation: page-turn-next .42s cubic-bezier(.22, .61, .36, 1); transform-origin: left center; }
+:root.book-mode .page-turn-prev { animation: page-turn-prev .42s cubic-bezier(.22, .61, .36, 1); transform-origin: right center; }
+
+@media (max-width: 700px) {
+  :root.book-mode main > .hero,
+  :root.book-mode main > .chapter,
+  :root.book-mode main > .site-foot { padding-inline: 20px; }
+  :root.book-mode .hero-inner { padding-inline: 20px; }
+}
+
+/* Android / touch ergonomics */
+@media (pointer: coarse) {
+  .hw-btn,
+  .read-toggle,
+  .quiz-next,
+  .lab-btn,
+  .update-link,
+  .text-link { min-height: 44px; }
+  .nav-item { min-height: 46px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.book-mode main { scroll-behavior: auto; }
+  :root.book-mode main > .hero,
+  :root.book-mode main > .chapter,
+  :root.book-mode main > .site-foot { scroll-behavior: auto; }
+  :root.book-mode .page-turn-next,
+  :root.book-mode .page-turn-prev { animation: none; }
+}
+
+/* ---------- Android WebView ergonomics ---------- */
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+@media (pointer: coarse) {
+  button, a, summary { touch-action: manipulation; }
+  .back-top { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .site-foot { padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
+  /* the TTS badge stays small, but its thumb target grows to 44px */
+  .say-btn { position: relative; }
+  .say-btn::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+  }
+}
+
+/* must stay last: the book carousel is defined above */
+@media print {
+
+  /* printing must ignore the on-screen book carousel */
+  :root.book-mode,
+  :root.book-mode body { height: auto; overflow: visible; }
+  :root.book-mode .book-hud { display: none !important; }
+  :root.book-mode main {
+    display: block;
+    height: auto;
+    margin-top: 0;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+  :root.book-mode main > .hero,
+  :root.book-mode main > .chapter,
+  :root.book-mode main > .site-foot {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+}

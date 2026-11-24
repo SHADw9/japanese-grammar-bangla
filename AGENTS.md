@@ -33,13 +33,17 @@ To preview locally, serve or open `index.html` directly. There is no dev server,
 - **`ANDROID_KEY_PASSWORD` must equal `ANDROID_KEYSTORE_PASSWORD`.** The keystore is PKCS12, which protects the key with the store password; a distinct key password makes `apksigner` fail *after* a successful Gradle build.
 - `android-release.yml` calls `scripts/*.mjs` and `npm run build:www` from the repo root; keep helper scripts under `scripts/`.
 - **Launcher icons come from `android-res/`, not `assets/icon.png`.** `cap add android` writes the stock Capacitor icon on every CI build, so `scripts/apply-android-icons.mjs` copies our pre-rendered PNGs in afterwards **and overwrites `mipmap-anydpi-v26/ic_launcher*.xml`** — Android 8+ uses the adaptive icon, so replacing only the PNGs changes nothing. Re-render the PNGs from `assets/logo.svg` / `assets/logo-mark.svg` with ImageMagick if the logo changes.
+- **Book mode is a native snap scroller, not a transform.** `:root.book-mode main` uses `overflow-x: auto` + `scroll-snap-type: x mandatory`, and `app.js` scrolls with `book.scrollLeft`/`scrollTo` and mirrors the position from the `scroll` event. Don't go back to translating `main`: with `overflow: hidden` every page past the first is clipped away (blank screen). Page-turn animation is a short decorative `rotateY` applied to the arriving page only.
+- **The notch is handled once, in `--topbar-h`.** `--topbar-h: calc(var(--bar-h) + var(--safe-top))` and the topbar pads itself with `--safe-top`, so every offset (hero padding, scroll margin, rail top, book main margin) already includes the safe area. Don't add `env(safe-area-inset-top)` to those offsets again.
+- **Print overrides for book mode live in a separate `@media print` block at the very end of `styles.css`**, after the book rules, so they win on source order. Keep them last if you append CSS.
+- The `<head>` boot script applies `book-mode` before first paint from `jp-view`; `app.js` must therefore treat an already-present class as the source of truth (`setBookMode(true, false)` on init, no re-save).
 
 ## Content conventions
 
 - All learner-facing prose, labels, and status messages are in Bengali. Japanese examples get `<ruby>漢字<rt>かな</rt></ruby>` furigana; inline Japanese uses `<span class="ja-inline" lang="ja">`, dialogue lines use `.line .ja` / `.romaji` / `.bn`.
 - Bengali digits in UI come from the `bn()` helper in `app.js` — don't hardcode Latin digits.
 - `data-speak="…"` on any element makes it clickable for TTS; `app.js` auto-injects buttons for dialogue lines and `.ja-inline` sentences.
-- Persisted `localStorage` keys: `jp-theme`, `jp-furi`, `jp-read`, `jp-rate`, `jp-gemini`, `jp-hint`, `jp-update`. New state should follow the same `jp-*` JSON pattern.
+- Persisted `localStorage` keys: `jp-theme`, `jp-furi`, `jp-read`, `jp-rate`, `jp-gemini`, `jp-hint`, `jp-update`, `jp-view`. New state should follow the same `jp-*` JSON pattern.
 - **App version has one source at build time.** `build-www.mjs` stamps `<meta name="app-version">` in `www/index.html` from `APP_VERSION` (CI derives it from `package.json` + run number) or `package.json`; `app.js` reads that meta for the GitHub release update check. The CI step order matters: version → `build:www` → `cap add` → `patch-android`.
 - The update checker targets `SHADw9/japanese-grammar-bangla` (`UPDATE_REPO` in `app.js`); change it there if the repo moves.
 - Homework vocabulary hints (`.hw-hint`) are opt-in: `:root.no-hint` hides them, the class is set in the head boot script, and every `[data-hw-hint]` button toggles the same global state.
